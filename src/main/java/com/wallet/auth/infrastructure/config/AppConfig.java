@@ -19,10 +19,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class AppConfig {
 
-    @Bean
+    /*@Bean
     public UserService userService(UserRepositoryPort userRepositoryPort, PasswordEncoderPort passwordEncoderPort) {
         return new UserService(userRepositoryPort, passwordEncoderPort);
-    }
+    }*/
 
     // Desactivamos la seguridad por defecto de Spring Web para poder acceder a nuestros endpoints
     // ya que estamos manejando la autenticación nosotros mismos
@@ -42,7 +42,7 @@ public class AppConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

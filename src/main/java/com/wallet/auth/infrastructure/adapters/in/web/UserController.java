@@ -3,6 +3,7 @@ package com.wallet.auth.infrastructure.adapters.in.web;
 import com.wallet.auth.domain.model.User;
 import com.wallet.auth.domain.ports.in.AuthenticateUserUseCase;
 import com.wallet.auth.domain.ports.in.CreateUserUseCase;
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,11 +26,9 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User request) {
-        boolean isAuthenticated = authenticateUserUseCase.authenticate(request.email(), request.password());
-        if (isAuthenticated) {
-            return ResponseEntity.ok("Autenticación exitosa");
-        }
-        return ResponseEntity.status(401).body("Credenciales inválidas");
+    public ResponseEntity<Map<String, String>> login(@RequestBody User request) {
+        return authenticateUserUseCase.authenticate(request.email(), request.password())
+                .map(token -> ResponseEntity.ok(Map.of("token", token)))
+                .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Credenciales inválidas")));
     }
 }
