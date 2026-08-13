@@ -1,8 +1,8 @@
 package com.wallet.auth.infrastructure.config;
 
-import com.wallet.auth.application.services.UserService;
-import com.wallet.auth.domain.ports.out.PasswordEncoderPort;
-import com.wallet.auth.domain.ports.out.UserRepositoryPort;
+// import com.wallet.auth.application.services.UserService;
+// import com.wallet.auth.domain.ports.out.PasswordEncoderPort;
+// import com.wallet.auth.domain.ports.out.UserRepositoryPort;
 
 import java.util.List;
 
