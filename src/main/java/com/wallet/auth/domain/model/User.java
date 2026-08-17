@@ -2,6 +2,9 @@ package com.wallet.auth.domain.model;
 
 import java.time.Instant;
 
+import lombok.Builder;
+
+@Builder
 public record User(String email, String name, String password, Instant createdAt) {
 
     public User(String email, String name, String password) {

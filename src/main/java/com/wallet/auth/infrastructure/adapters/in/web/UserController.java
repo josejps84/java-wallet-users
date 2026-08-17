@@ -1,8 +1,9 @@
 package com.wallet.auth.infrastructure.adapters.in.web;
-
-import com.wallet.auth.domain.model.User;
+import com.wallet.auth.infrastructure.adapters.in.web.dto.UserMapper;
 import com.wallet.auth.domain.ports.in.AuthenticateUserUseCase;
 import com.wallet.auth.domain.ports.in.CreateUserUseCase;
+import com.wallet.auth.infrastructure.adapters.in.web.dto.UserDto;
+
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,14 +21,14 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody User request) {
-        createUserUseCase.createUser(request);
+    public ResponseEntity<String> register(@RequestBody UserDto request) {
+        createUserUseCase.createUser(UserMapper.toDomain(request));
         return ResponseEntity.ok("Usuario creado exitosamente");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody User request) {
-        return authenticateUserUseCase.authenticate(request.email(), request.password())
+    public ResponseEntity<Map<String, String>> login(@RequestBody UserDto request) {
+        return authenticateUserUseCase.authenticate(request.getEmail(), request.getPassword())
                 .map(token -> ResponseEntity.ok(Map.of("token", token)))
                 .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Credenciales inválidas")));
     }
