@@ -1,4 +1,4 @@
-package com.wallet.auth.domain.model.excecption;
+package com.wallet.auth.domain.model.exception;
 
 public class UserAlreadyExistsException extends RuntimeException {
 

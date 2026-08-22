@@ -5,13 +5,15 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.wallet.auth.domain.model.User;
-import com.wallet.auth.infrastructure.adapters.in.web.dto.UserDto;
-import com.wallet.auth.domain.model.excecption.UserAlreadyExistsException;
+import com.wallet.auth.domain.model.exception.AccountRegistrationFailedException;
+import com.wallet.auth.domain.model.exception.UserAlreadyExistsException;
 import com.wallet.auth.domain.ports.in.AuthenticateUserUseCase;
 import com.wallet.auth.domain.ports.in.CreateUserUseCase;
 import com.wallet.auth.domain.ports.in.TokenProvider;
+import com.wallet.auth.domain.ports.out.AccountRegistrationPort;
 import com.wallet.auth.domain.ports.out.PasswordEncoderPort;
 import com.wallet.auth.domain.ports.out.UserRepositoryPort;
+import com.wallet.auth.infrastructure.adapters.in.web.dto.UserDto;
 import com.wallet.auth.infrastructure.adapters.in.web.dto.UserMapper;
 
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +25,14 @@ public class UserService implements CreateUserUseCase, AuthenticateUserUseCase {
     private final UserRepositoryPort userRepository;
     private final PasswordEncoderPort passwordEncoder;
     private final TokenProvider tokenProvider;
+    private final AccountRegistrationPort accountRegistrationPort;
 
-    public UserService(UserRepositoryPort userRepository, PasswordEncoderPort passwordEncoder, TokenProvider tokenProvider) {
+    public UserService(UserRepositoryPort userRepository, PasswordEncoderPort passwordEncoder,
+            TokenProvider tokenProvider, AccountRegistrationPort accountRegistrationPort) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
+        this.accountRegistrationPort = accountRegistrationPort;
     }
 
     @Override
@@ -36,7 +41,7 @@ public class UserService implements CreateUserUseCase, AuthenticateUserUseCase {
             log.error("Un usuario con el email {} ya existe.", user.email());
             throw new UserAlreadyExistsException("El usuario con este email ya existe");
         }
-        
+
         String encodedPassword = passwordEncoder.encode(user.password());
         User userWithEncryptedPassword = User.builder()
                 .email(user.email())
@@ -44,8 +49,21 @@ public class UserService implements CreateUserUseCase, AuthenticateUserUseCase {
                 .password(encodedPassword)
                 .createdAt(user.createdAt())
                 .build();
-        
-        return UserMapper.toDto(userRepository.save(userWithEncryptedPassword));
+
+        User savedUser = userRepository.save(userWithEncryptedPassword);
+
+        try {
+            accountRegistrationPort.register(savedUser.email());
+            return UserMapper.toDto(savedUser);
+        } catch (AccountRegistrationFailedException ex) {
+            userRepository.deleteByEmail(savedUser.email());
+            log.error("Rollback del usuario {} tras fallo en la creación de la cuenta externa.", savedUser.email(), ex);
+            throw ex;
+        } catch (RuntimeException ex) {
+            userRepository.deleteByEmail(savedUser.email());
+            log.error("Rollback del usuario {} tras fallo inesperado al crear la cuenta externa.", savedUser.email(), ex);
+            throw new AccountRegistrationFailedException("La creación de la cuenta falló en el microservicio de cuentas.", ex);
+        }
     }
 
     @Override

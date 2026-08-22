@@ -8,15 +8,15 @@ public class UserMapper {
         return UserDto.builder()
                 .email(user.email())
                 .name(user.name())
-                .password(user.password())
                 .createdAt(user.createdAt())
                 .build();
-    }
-
-    public static User toDomain(UserDto userDto) {
-        return User.builder()
+            }
+            
+            public static User toDomain(UserDto userDto) {
+                return User.builder()
                 .email(userDto.getEmail())
                 .name(userDto.getName())
+                .password(userDto.getPassword())
                 .createdAt(userDto.getCreatedAt())
                 .build();
     }

@@ -31,4 +31,9 @@ public class MongoUserRepositoryAdapter implements UserRepositoryPort {
     public boolean existsByEmail(String email) {
         return repository.existsByEmail(email);
     }
+
+    @Override
+    public void deleteByEmail(String email) {
+        repository.findByEmail(email).ifPresent(repository::delete);
+    }
 }

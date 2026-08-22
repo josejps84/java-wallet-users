@@ -10,4 +10,8 @@ public record User(String email, String name, String password, Instant createdAt
     public User(String email, String name, String password) {
         this(email, name, password, Instant.now());
     }
+
+    public User(String email, String password) {
+        this(email, null, password, Instant.now());
+    }
 }
