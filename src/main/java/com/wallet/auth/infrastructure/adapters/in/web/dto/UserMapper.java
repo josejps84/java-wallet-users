@@ -1,6 +1,10 @@
 package com.wallet.auth.infrastructure.adapters.in.web.dto;
 
 import com.wallet.auth.domain.model.User;
+import com.wallet.auth.domain.model.UserAuthType;
+import com.wallet.auth.domain.model.UserType;
+
+import java.time.Instant;
 
 public class UserMapper {
 
@@ -8,7 +12,7 @@ public class UserMapper {
         return UserDto.builder()
                 .email(user.email())
                 .name(user.name())
-                .createdAt(user.createdAt())
+                .authType(user.authType().ordinal())
                 .build();
             }
             
@@ -17,7 +21,10 @@ public class UserMapper {
                 .email(userDto.getEmail())
                 .name(userDto.getName())
                 .password(userDto.getPassword())
-                .createdAt(userDto.getCreatedAt())
+                .authType(UserAuthType.values()[userDto.getAuthType()])
+                .userType(UserType.CUSTOMER)
+                .status(0)
+                .registeredAt(Instant.now())
                 .build();
     }
     

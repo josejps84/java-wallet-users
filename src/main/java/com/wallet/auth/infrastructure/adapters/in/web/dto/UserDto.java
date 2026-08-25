@@ -4,15 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.Instant;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDto {
-    private String email;
+    private String identification;
     private String name;
+    private String email;
     private String password;
-    private Instant createdAt;
+    private int authType;
 }
