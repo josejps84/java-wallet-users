@@ -1,4 +1,5 @@
 package com.wallet.auth.infrastructure.adapters.in.web;
+import com.wallet.auth.infrastructure.adapters.in.web.dto.LoginDto;
 import com.wallet.auth.infrastructure.adapters.in.web.dto.UserMapper;
 import com.wallet.auth.domain.ports.in.AuthenticateUserUseCase;
 import com.wallet.auth.domain.ports.in.CreateUserUseCase;
@@ -27,7 +28,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody UserDto request) {
+    public ResponseEntity<Map<String, String>> login(@RequestBody LoginDto request) {
         return authenticateUserUseCase.authenticate(request.getEmail(), request.getPassword())
                 .map(token -> ResponseEntity.ok(Map.of("token", token)))
                 .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Credenciales inválidas")));
