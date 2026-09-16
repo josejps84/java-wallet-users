@@ -14,18 +14,30 @@ public class UserMapper {
                 .name(user.name())
                 .authType(user.authType().ordinal())
                 .build();
-            }
-            
-            public static User toDomain(UserDto userDto) {
-                return User.builder()
-                .email(userDto.getEmail())
-                .name(userDto.getName())
-                .password(userDto.getPassword())
-                .authType(UserAuthType.values()[userDto.getAuthType()])
-                .userType(UserType.CUSTOMER)
-                .status(0)
-                .registeredAt(Instant.now())
-                .build();
+    }
+
+    public static User toDomain(UserDto userDto) {
+        return User.builder()
+        .email(userDto.getEmail())
+        .name(userDto.getName())
+        .password(userDto.getPassword())
+        .authType(UserAuthType.values()[userDto.getAuthType()])
+        .userType(UserType.CUSTOMER)
+        .status(0)
+        .registeredAt(Instant.now())
+        .build();
+    }
+
+    public static User toDomain(RegisterUserDto userDto) {
+        return User.builder()
+        .email(userDto.getEmail())
+        .name(userDto.getName())
+        .password(userDto.getPassword())
+        .authType(UserAuthType.PASSWORD)
+        .userType(UserType.CUSTOMER)
+        .status(0)
+        .registeredAt(Instant.now())
+        .build();
     }
     
 }

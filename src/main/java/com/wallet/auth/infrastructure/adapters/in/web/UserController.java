@@ -1,5 +1,6 @@
 package com.wallet.auth.infrastructure.adapters.in.web;
 import com.wallet.auth.infrastructure.adapters.in.web.dto.LoginDto;
+import com.wallet.auth.infrastructure.adapters.in.web.dto.RegisterUserDto;
 import com.wallet.auth.infrastructure.adapters.in.web.dto.UserMapper;
 import com.wallet.auth.domain.ports.in.AuthenticateUserUseCase;
 import com.wallet.auth.domain.ports.in.CreateUserUseCase;
@@ -22,7 +23,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody UserDto request) {
+    public ResponseEntity<String> register(@RequestBody RegisterUserDto request) {
         createUserUseCase.createUser(UserMapper.toDomain(request));
         return ResponseEntity.ok("Usuario creado exitosamente");
     }

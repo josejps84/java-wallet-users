@@ -56,15 +56,16 @@ public class UserService implements CreateUserUseCase, AuthenticateUserUseCase {
                 .build();
 
         User savedUser = userRepository.save(userWithEncryptedPassword);
-
-         try {
-             accountRegistrationPort.register(savedUser.email());
-             return UserMapper.toDto(savedUser);
-         } catch (AccountRegistrationFailedException ex) {
-             userRepository.deleteByEmail(savedUser.email());
-             log.error("Rollback del usuario {} tras fallo en la creación de la cuenta externa.", savedUser.email(), ex);
-             throw ex;
-         }
+        return UserMapper.toDto(savedUser);
+//
+//         try {
+//             accountRegistrationPort.register(savedUser.email());
+//             return UserMapper.toDto(savedUser);
+//         } catch (AccountRegistrationFailedException ex) {
+//             userRepository.deleteByEmail(savedUser.email());
+//             log.error("Rollback del usuario {} tras fallo en la creación de la cuenta externa.", savedUser.email(), ex);
+//             throw ex;
+//         }
     }
 
     @Override
