@@ -27,13 +27,14 @@ public class JwtTokenProvider implements TokenProvider {
         this.expirationMs = expirationMs;
     }
 
-    public String generateToken(String email, String userType) {
+    public String generateToken(String email, String userType, long userId) {
         Instant now = Instant.now();
         Instant expiration = now.plusMillis(expirationMs);
 
         return Jwts.builder()
                 .subject(email)
                 .claim("userType", userType)
+                .claim("userId", userId)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiration))
                 .signWith(secretKey)

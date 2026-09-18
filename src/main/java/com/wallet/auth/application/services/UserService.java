@@ -77,6 +77,6 @@ public class UserService implements CreateUserUseCase, AuthenticateUserUseCase {
                     log.error("Intento de autenticación fallido para el email: {}", email);
                     return new IllegalArgumentException("Credenciales inválidas");
                 });
-        return Optional.of(tokenProvider.generateToken(response.email(), response.userType().toString()));
+        return Optional.of(tokenProvider.generateToken(response.email(), response.userType().toString(), response.userId()));
     }
 }
