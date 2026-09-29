@@ -2,7 +2,6 @@ package com.wallet.auth.application.services;
 
 import java.util.Optional;
 
-import com.wallet.auth.domain.model.exception.AccountRegistrationFailedException;
 import org.springframework.stereotype.Service;
 
 import com.wallet.auth.domain.model.User;

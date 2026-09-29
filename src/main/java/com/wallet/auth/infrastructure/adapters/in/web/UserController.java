@@ -4,7 +4,6 @@ import com.wallet.auth.infrastructure.adapters.in.web.dto.RegisterUserDto;
 import com.wallet.auth.infrastructure.adapters.in.web.dto.UserMapper;
 import com.wallet.auth.domain.ports.in.AuthenticateUserUseCase;
 import com.wallet.auth.domain.ports.in.CreateUserUseCase;
-import com.wallet.auth.infrastructure.adapters.in.web.dto.UserDto;
 
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
