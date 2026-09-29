@@ -9,7 +9,7 @@ import com.wallet.auth.domain.model.exception.UserAlreadyExistsException;
 import com.wallet.auth.domain.ports.in.AuthenticateUserUseCase;
 import com.wallet.auth.domain.ports.in.CreateUserUseCase;
 import com.wallet.auth.domain.ports.in.TokenProvider;
-import com.wallet.auth.domain.ports.out.AccountRegistrationPort;
+//import com.wallet.auth.domain.ports.out.AccountRegistrationPort;
 import com.wallet.auth.domain.ports.out.PasswordEncoderPort;
 import com.wallet.auth.domain.ports.out.UserRepositoryPort;
 import com.wallet.auth.infrastructure.adapters.in.web.dto.UserDto;
@@ -24,14 +24,14 @@ public class UserService implements CreateUserUseCase, AuthenticateUserUseCase {
     private final UserRepositoryPort userRepository;
     private final PasswordEncoderPort passwordEncoder;
     private final TokenProvider tokenProvider;
-    private final AccountRegistrationPort accountRegistrationPort;
+    //private final AccountRegistrationPort accountRegistrationPort;
 
     public UserService(UserRepositoryPort userRepository, PasswordEncoderPort passwordEncoder,
-            TokenProvider tokenProvider, AccountRegistrationPort accountRegistrationPort) {
+            TokenProvider tokenProvider/*, AccountRegistrationPort accountRegistrationPort*/) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
-        this.accountRegistrationPort = accountRegistrationPort;
+        //this.accountRegistrationPort = accountRegistrationPort;
     }
 
     @Override
