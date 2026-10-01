@@ -11,6 +11,8 @@ public class UserMapper {
     public static UserDto toDto(User user) {
         return UserDto.builder()
                 .email(user.email())
+                .identification(user.identification())
+                .password(user.password())
                 .name(user.name())
                 .authType(user.authType().ordinal())
                 .build();
