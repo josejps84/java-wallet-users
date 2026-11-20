@@ -1,18 +1,5 @@
 package com.wallet.auth.infrastructure.adapters.in.web.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class UserDto {
-    private String identification;
-    private String name;
-    private String email;
-    private String password;
-    private int authType;
+/** Public view of a user; never carries the password hash. */
+public record UserDto(long userId, String identification, String name, String email) {
 }

@@ -3,135 +3,126 @@ package com.wallet.auth.application.services;
 import java.time.Instant;
 import java.util.Optional;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.wallet.auth.domain.model.User;
 import com.wallet.auth.domain.model.UserAuthType;
 import com.wallet.auth.domain.model.UserType;
+import com.wallet.auth.domain.model.exception.AccountRegistrationFailedException;
+import com.wallet.auth.domain.model.exception.InvalidCredentialsException;
 import com.wallet.auth.domain.model.exception.UserAlreadyExistsException;
-import com.wallet.auth.domain.ports.in.TokenProvider;
+import com.wallet.auth.domain.ports.out.AccountRegistrationPort;
 import com.wallet.auth.domain.ports.out.PasswordEncoderPort;
+import com.wallet.auth.domain.ports.out.TokenProvider;
 import com.wallet.auth.domain.ports.out.UserRepositoryPort;
-import com.wallet.auth.infrastructure.adapters.in.web.dto.UserDto;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class UserServiceTest {
+class UserServiceTest {
 
-    @Mock 
+    private static final String EMAIL = "jane.doe@example.com";
+    private static final String RAW_PASSWORD = "not-a-real-password";
+    private static final String HASH = "hashed-password";
+
+    @Mock
     UserRepositoryPort repo;
-    @Mock 
+    @Mock
     PasswordEncoderPort passEncoder;
-    @Mock 
+    @Mock
     TokenProvider tokenProvider;
+    @Mock
+    AccountRegistrationPort accountRegistration;
 
-    @InjectMocks 
+    @InjectMocks
     UserService service;
-    
+
     @Test
-    void testAuthenticate() {
-        User user = createTestUser(false);
-        User userPassEncoded = encodePass(user);
-        String tokenGenerated = "tokenGenerated";
-        
-        Mockito.when(repo.findByEmail(user.email())).thenReturn(Optional.ofNullable(userPassEncoded));
-        Mockito.when(passEncoder.matches(user.password(), userPassEncoded.password())).thenReturn(true);
-        Mockito.when(tokenProvider.generateToken(user.email(), user.userType().toString(), user.userId())).thenReturn(tokenGenerated);
+    void authenticateReturnsTokenForValidCredentials() {
+        User stored = testUser(7L, HASH);
+        when(repo.findByEmail(EMAIL)).thenReturn(Optional.of(stored));
+        when(passEncoder.matches(RAW_PASSWORD, HASH)).thenReturn(true);
+        when(tokenProvider.generateToken(EMAIL, "CUSTOMER", 7L)).thenReturn("token");
 
-        Optional<String> result = service.authenticate(user.email(), "not-a-real-password");
-
-        Assertions.assertFalse(result.isEmpty());
-        Assertions.assertEquals(tokenGenerated, result.get());
-    }
-    
-    @Test
-    void testAuthenticateWrongPassword() {
-        User user = createTestUser(false);
-        User userPassEncoded = encodePass(user);
-        
-        Mockito.when(repo.findByEmail(user.email())).thenReturn(Optional.ofNullable(userPassEncoded));
-        Mockito.when(passEncoder.matches(user.password(), userPassEncoded.password())).thenReturn(false);
-
-        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            service.authenticate(user.email(), "not-a-real-password");
-        });
-
-        Assertions.assertEquals(ex.getMessage(), "Credenciales inválidas");
+        assertThat(service.authenticate(" Jane.Doe@Example.com ", RAW_PASSWORD)).isEqualTo("token");
     }
 
     @Test
-    void testAuthenticateWrongEmail() {
-        User user = createTestUser(false);
-        
-        Mockito.when(repo.findByEmail(user.email())).thenReturn(Optional.ofNullable(null));
+    void authenticateRejectsWrongPassword() {
+        when(repo.findByEmail(EMAIL)).thenReturn(Optional.of(testUser(7L, HASH)));
+        when(passEncoder.matches(RAW_PASSWORD, HASH)).thenReturn(false);
 
-        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            service.authenticate(user.email(), "not-a-real-password");
-        });
-
-        Assertions.assertEquals(ex.getMessage(), "Credenciales inválidas");
+        assertThatThrownBy(() -> service.authenticate(EMAIL, RAW_PASSWORD))
+                .isInstanceOf(InvalidCredentialsException.class);
     }
 
     @Test
-    void testCreateUser() {
-        String encodedPass = "encodedPass";
-        User user = createTestUser(false);
-        User userPassEncoded = encodePass(user);
-        
-        Mockito.when(repo.save(userPassEncoded)).thenReturn(userPassEncoded);
-        Mockito.when(repo.existsByEmail(user.email())).thenReturn(false);
-        Mockito.when(passEncoder.encode(user.password())).thenReturn(encodedPass);
+    void authenticateRejectsUnknownEmail() {
+        when(repo.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
-        UserDto userDto = service.createUser(user);
-         
-        Assertions.assertNotNull(userDto);
-        Assertions.assertEquals(userDto.getIdentification(), user.identification());
-        Assertions.assertEquals(userDto.getPassword(), encodedPass);
+        assertThatThrownBy(() -> service.authenticate(EMAIL, RAW_PASSWORD))
+                .isInstanceOf(InvalidCredentialsException.class);
     }
-    
+
     @Test
-    void testCreateUserEmailAlreadyExists() {
-        User user = createTestUser(false);
-        Mockito.when(repo.existsByEmail(user.email())).thenReturn(true);
-        
-        UserAlreadyExistsException ex = Assertions.assertThrows(UserAlreadyExistsException.class, () -> {
-            service.createUser(user);
-        });
+    void createUserHashesPasswordAndOpensAccount() {
+        when(repo.existsByEmail(EMAIL)).thenReturn(false);
+        when(passEncoder.encode(RAW_PASSWORD)).thenReturn(HASH);
+        when(repo.save(any())).thenAnswer(invocation -> ((User) invocation.getArgument(0)).toBuilder().userId(7L).build());
 
-        Assertions.assertEquals(ex.getMessage(), "El usuario con este email ya existe");
+        User created = service.createUser(testUser(0L, RAW_PASSWORD).toBuilder().email("JANE.DOE@example.com").build());
+
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+        verify(repo).save(saved.capture());
+        assertThat(saved.getValue().password()).isEqualTo(HASH);
+        assertThat(saved.getValue().email()).isEqualTo(EMAIL);
+        assertThat(saved.getValue().identification()).isEqualTo("ID-123");
+        assertThat(created.userId()).isEqualTo(7L);
+        verify(accountRegistration).register(created);
     }
 
-    User createTestUser(boolean encodedPass) {
-        Instant now = Instant.now();
+    @Test
+    void createUserRollsBackWhenAccountCannotBeOpened() {
+        when(repo.existsByEmail(EMAIL)).thenReturn(false);
+        when(passEncoder.encode(RAW_PASSWORD)).thenReturn(HASH);
+        when(repo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        doThrow(new AccountRegistrationFailedException("down")).when(accountRegistration).register(any());
+
+        assertThatThrownBy(() -> service.createUser(testUser(0L, RAW_PASSWORD)))
+                .isInstanceOf(AccountRegistrationFailedException.class);
+        verify(repo).deleteByEmail(EMAIL);
+    }
+
+    @Test
+    void createUserRejectsDuplicatedEmail() {
+        when(repo.existsByEmail(EMAIL)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.createUser(testUser(0L, RAW_PASSWORD)))
+                .isInstanceOf(UserAlreadyExistsException.class);
+        verify(repo, never()).save(any());
+    }
+
+    private static User testUser(long userId, String password) {
         return User.builder()
-            .email("jane.doe@example.com")
-            .userType(UserType.CUSTOMER)
-            .authType(UserAuthType.PASSWORD)
-            .identification("ID-123")
-            .name("Jane Doe")
-            .password(encodedPass ? "encodedPass" : "not-a-real-password")
-            .status(0)
-            .registeredAt(now)
-            .lastLoginAt(now)
-            .build();
-    }
-    
-    User encodePass(User user) {
-        return User.builder()
-                .userId(user.userId())
-                .identification(user.identification())
-                .name(user.name())
-                .email(user.email())
-                .password("encodedPass")
-                .authType(user.authType())
-                .status(user.status())
-                .userType(user.userType())
-                .registeredAt(user.registeredAt())
+                .userId(userId)
+                .email(EMAIL)
+                .userType(UserType.CUSTOMER)
+                .authType(UserAuthType.PASSWORD)
+                .identification("ID-123")
+                .name("Jane Doe")
+                .password(password)
+                .registeredAt(Instant.now())
                 .build();
     }
 }
