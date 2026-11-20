@@ -12,7 +12,7 @@ JAVA_HOME=/usr/lib/jvm/java-25-openjdk ./mvnw test -Dtest=UserServiceTest  # sin
 JAVA_HOME=/usr/lib/jvm/java-25-openjdk ./mvnw spring-boot:run              # dev server on :8081
 ```
 
-`AuthApplicationTests` starts MongoDB with Testcontainers (skipped without Docker). Never put real personal data in tests.
+`AuthApplicationTests` starts MongoDB with Testcontainers (skipped without Docker): register/login, rollback when the account service fails, sequential ids, unique email index, token claims. `HttpAccountRegistrationAdapterTest` uses a JDK `HttpServer` stub (the network-retry test takes ~3 s). Never put real personal data in tests.
 
 ## Architecture (hexagonal)
 
