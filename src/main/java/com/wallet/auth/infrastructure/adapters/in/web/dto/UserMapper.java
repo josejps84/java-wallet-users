@@ -6,40 +6,25 @@ import com.wallet.auth.domain.model.UserType;
 
 import java.time.Instant;
 
-public class UserMapper {
+public final class UserMapper {
+
+    private UserMapper() {
+    }
 
     public static UserDto toDto(User user) {
-        return UserDto.builder()
-                .email(user.email())
-                .identification(user.identification())
-                .password(user.password())
-                .name(user.name())
-                .authType(user.authType().ordinal())
+        return new UserDto(user.userId(), user.identification(), user.name(), user.email());
+    }
+
+    public static User toDomain(RegisterUserDto dto) {
+        return User.builder()
+                .identification(dto.identification().trim())
+                .name(dto.name().trim())
+                .email(dto.email())
+                .password(dto.password())
+                .authType(UserAuthType.PASSWORD)
+                .userType(UserType.CUSTOMER)
+                .status(0)
+                .registeredAt(Instant.now())
                 .build();
     }
-
-    public static User toDomain(UserDto userDto) {
-        return User.builder()
-        .email(userDto.getEmail())
-        .name(userDto.getName())
-        .password(userDto.getPassword())
-        .authType(UserAuthType.values()[userDto.getAuthType()])
-        .userType(UserType.CUSTOMER)
-        .status(0)
-        .registeredAt(Instant.now())
-        .build();
-    }
-
-    public static User toDomain(RegisterUserDto userDto) {
-        return User.builder()
-        .email(userDto.getEmail())
-        .name(userDto.getName())
-        .password(userDto.getPassword())
-        .authType(UserAuthType.PASSWORD)
-        .userType(UserType.CUSTOMER)
-        .status(0)
-        .registeredAt(Instant.now())
-        .build();
-    }
-    
 }

@@ -9,7 +9,7 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.wallet.auth.domain.ports.in.TokenProvider;
+import com.wallet.auth.domain.ports.out.TokenProvider;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -21,12 +21,13 @@ public class JwtTokenProvider implements TokenProvider {
     private final long expirationMs;
 
     public JwtTokenProvider(
-            @Value("${app.jwt.secret}") String secret,
-            @Value("${app.jwt.expiration-ms:86400000}") long expirationMs) {
+            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.expiration-ms:86400000}") long expirationMs) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
     }
 
+    @Override
     public String generateToken(String email, String userType, long userId) {
         Instant now = Instant.now();
         Instant expiration = now.plusMillis(expirationMs);

@@ -1,31 +1,28 @@
 # AGENTS.md
 
-Spring Boot 4.1.0 / Java 25 auth service (`com.wallet:auth`). Maven wrapper only; single module. No CI, lint, or formatter config.
+Spring Boot 4.1 / Java 25 users & auth service (`com.wallet:auth`, packages `com.wallet.auth`). Maven wrapper only; single module.
 
-## Build & test (JDK gotcha)
+## Build & test
 
-`mvnw` is not executable — run it via `bash mvnw ...` (or `chmod +x mvnw` once).
-
-Build **only works on JDK 25** (matches `pom.xml` `java.version` and the Dockerfile's temurin-25). On newer local JDKs (e.g. 27), Lombok breaks: by default annotation processing silently doesn't run (massive `cannot find symbol` errors), and forcing `-Dmaven.compiler.proc=full` crashes Lombok itself. Always pin:
+Build **only works on JDK 25**: on newer JDKs (e.g. 27) Lombok crashes. Lombok runs through `annotationProcessorPaths` in `pom.xml`.
 
 ```sh
-JAVA_HOME=/usr/lib/jvm/java-25-openjdk bash mvnw test        # full suite
-JAVA_HOME=/usr/lib/jvm/java-25-openjdk bash mvnw test -Dtest=UserTest   # single test
-JAVA_HOME=/usr/lib/jvm/java-25-openjdk bash mvnw spring-boot:run        # dev server on :8081
+JAVA_HOME=/usr/lib/jvm/java-25-openjdk ./mvnw test                        # full suite
+JAVA_HOME=/usr/lib/jvm/java-25-openjdk ./mvnw test -Dtest=UserServiceTest  # single test
+JAVA_HOME=/usr/lib/jvm/java-25-openjdk ./mvnw spring-boot:run              # dev server on :8081
 ```
 
-Tests do NOT require a running MongoDB (`@SpringBootTest` context loads with an unreachable Mongo URI — verified).
+`AuthApplicationTests` starts MongoDB with Testcontainers (skipped without Docker). Never put real personal data in tests.
 
-## Architecture (hexagonal-ish)
+## Architecture (hexagonal)
 
-- `domain/ports/in` = use-case interfaces; `domain/ports/out` = repository/password/token ports.
-- `application/services/UserService` implements the use cases; inject new behavior through ports, not concrete classes.
-- `infrastructure/adapters/in/web` (controllers, DTOs, exception handler) and `infrastructure/adapters/out/db` (Mongo repo, BCrypt) implement the ports. Entry point: `AuthApplication`.
-- Existing quirks to preserve, not fix casually: package is misspelled `domain.model.excecption`, and `UserService` imports `UserDto` from infrastructure.
+- `domain/ports/in` = use cases (`CreateUserUseCase`, `AuthenticateUserUseCase`); `domain/ports/out` = repository, password encoder, `TokenProvider`, `AccountRegistrationPort`. Domain and application code must not import infrastructure classes (DTOs live in `infrastructure/adapters/in/web/dto`).
+- `UserService` registers the user, then opens their wallet through `AccountRegistrationPort`; if that fails the user is deleted again (502 to the client).
+- `HttpAccountRegistrationAdapter` calls the account service directly (`app.accounts.base-url`) with a JWT minted for the new user, retrying only network errors (Spring Framework `RetryTemplate`).
+- Emails are normalized (trim + lowercase) and have a unique Mongo index (`spring.data.mongodb.auto-index-creation=true`).
 
-## Runtime config quirks
+## Runtime config
 
-- `application.properties`: port is **8081** locally, but the Dockerfile only `EXPOSE`s 8080 without overriding it — containers actually listen on 8081.
-- Mongo URI property is `spring.mongodb.uri` (Boot 4 name). The Dockerfile resolves env `SPRING_MONGODB_URI` / `SPRING_DATA_MONGODB_URI` into both `spring.mongodb.uri` and `spring.data.mongodb.uri`, defaulting to `mongodb://mongo:27017/wallet`.
-- JWT keys: `app.jwt.secret`, `app.jwt.expiration-ms` (read by `JwtTokenProvider`).
-- Security (`AppConfig`): CSRF disabled, `/api/users/**` fully public, all else requires auth; CORS allows `localhost:3000` and `localhost:5173` with credentials. Endpoints: `POST /api/users/register`, `POST /api/users/login` (returns `{token}`).
+- Port **8081**. Endpoints: `POST /api/users/register` (201 + user without password), `POST /api/users/login` (`{token}`, 401 on bad credentials). Everything else is denied.
+- Env vars: `JWT_SECRET` (required, same as account service and gateway), `MONGODB_URI`, `ACCOUNTS_BASE_URL`, `JWT_EXPIRATION_MS`. Local runs read them from `.env` (git-ignored, see `.env.example`).
+- Errors are RFC 9457 `ProblemDetail` JSON; user-facing messages in Spanish, logs in English.
